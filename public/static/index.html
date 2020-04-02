@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>roomchat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- 最新版本的 Bootstrap 核心 CSS 文件 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+  <script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
+  <!-- 最新的 Bootstrap 核心 JavaScript 文件 -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+  <style>
+    body, html, .back {
+      width: 100%;
+      height: 100%;
+    }
+    .box {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .login {
+      height: 300px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" class="box back">
+    <div v-if="name">
+      <div class="panel panel-success" style="width: 500px">
+        <div class="panel-heading" style="display: flex; justify-content: space-between">
+          <div>聊天室 {{ room }}</div>
+          <div>
+            <button type="button" @click.prevent="leave" class="btn btn-success">离开房间</button>
+          </div>
+        </div>
+        <div class="panel-body login">
+          <div class="form-group">
+            <label for="exampleInputEmail1">消息列表</label>
+            <div id="dialogue_box" style="height: 200px; overflow-y: scroll" readonly>
+              <div v-for="item in chatInfoList">{{item}}</div>
+            </div>
+          </div>
+          <div class="form-group">
+            <input class="form-control" v-model="msg" @keyup.enter="send()" v-model="msg" :value="msg" type="text">
+          </div>
+<!--          <div class="form-group">-->
+<!--            <button type="button" @mousedown.prevent="startRec()" @mouseup.prevent="stopRec()" class="btn btn-success">语音</button>-->
+<!--          </div>-->
+        </div>
+      </div>
+    </div>
+    <div v-else class="box">
+      <div class="panel panel-success" style="width: 500px">
+        <div class="panel-heading">登录聊天室</div>
+        <div class="panel-body login">
+          <form @submit.prevent="join">
+            <div class="form-group">
+              <label for="exampleInputEmail1">房间号</label>
+              <input v-model="login.room" class="form-control" id="exampleInputEmail1" placeholder="房间号">
+            </div>
+            <div class="form-group">
+              <label for="exampleInputEmail1">昵称</label>
+              <input v-model="login.name" class="form-control" id="exampleInputEmail1" placeholder="昵称">
+            </div>
+            <button type="submit" class="btn btn-success">加入房间</button>
+          </form>
+        </div>
+      </div>
+    </div>
+<!--    <div class="form-group">-->
+<!--      <audio id="audioPlayer" ></audio>-->
+<!--    </div>-->
+  </div>
+</body>
+<script src="/static/vue.min.js"></script>
+<script src="/static/socket.io-1.4.4.js"></script>
+<script>
+
+  const app = new Vue({
+    el: '#app',
+    data: {
+      login: {
+       name: '',
+       room: ''
+      },
+      msg: '',
+      room: '',
+      name: '',
+      chatInfoList: [],
+      ws: null,
+      // constrants: {
+      //   audio: {
+      //     noiseSuppression: true,
+      //     echoCancellation: true
+      //   }
+      // },
+      // stream: null,
+      // audioplayer: null,
+      // canAudio: false,
+      // recOption: { mimeType: "audio/ogg" }
+    },
+    methods: {
+      send () {
+        this.ws.emit('message', {
+          msg: this.msg,
+          room: this.room
+        })
+        this.msg = ''
+      },
+      join () {
+        this.ws.emit('join', this.login)
+      },
+      leave () {
+        this.ws.emit('leave', { room: this.room })
+      },
+      scrollBottom () {
+          this.$nextTick(function() {
+          let div = document.getElementById('dialogue_box')
+          div.scrollTop = div.scrollHeight
+        })
+      },
+      // gotDevices (deviceInfos) {
+      //   const audioSource = []
+      //   deviceInfos.forEach((deviceInfo) => {
+      //     if (deviceInfo.kind === 'audioinput') {
+      //       audioSource.push(deviceInfo)
+      //     }
+      //   })
+      //   if (audioSource) {
+      //     this.canAudio = true
+      //   }
+      // },
+      // gotMediaStream (stream) {
+      //   this.stream = stream
+      //   return navigator.mediaDevices.enumerateDevices()
+      // },
+      // start () {
+      //   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      //     console.log('getUserMedia is not supported!')
+      //   } else {
+      //     this.audioplayer = document.querySelector('audio#audioPlayer')
+      //     navigator.mediaDevices.getUserMedia(this.constrants)
+      //       .then(this.gotMediaStream)
+      //       .then(this.gotDevices)
+      //       .catch(this.handleError)
+      //   }
+      // },
+      // startRec () {
+      //   this.isRec = true
+      //   this.buffer = []
+      //   // if (!MediaRecorder.isTypeSupported(this.recOption.mimeType)) {
+      //   //   console.error(this.recOption.mimeType)
+      //   //   return
+      //   // }
+      //   try{
+      //     this.mediaRecorder = new MediaRecorder(this.stream, {audio:true})
+      //   } catch (e) {
+      //     return
+      //   }
+      //   this.mediaRecorder.ondataavailable = this.handelDataAvailable
+      //   this.mediaRecorder.start(10)
+      // },
+      // handelDataAvailable (e) {
+      //   if (e && e.data && e.data.size > 0) {
+      //     this.buffer.push(e.data)
+      //   }
+      // },
+      // stopRec () {
+      //   this.mediaRecorder.stop()
+      //   const blob = new Blob(this.buffer, {type: 'audio/ogg'})
+      //   this.ws.emit('msg', {
+      //     msg: blob,
+      //     room: this.room
+      //   })
+      //   this.audioplayer.src = window.URL.createObjectURL(blob)
+      //   this.audioplayer.play()
+      // },
+      // handleError (err) {
+      //   console.log(err)
+      // }
+    },
+    mounted () {
+      this.ws = io('http://127.0.0.1:8080');
+      this.ws.on('connect', (data) => {
+        console.log('连接成功')
+      })
+      this.ws.on('message', (data) => {
+        this.chatInfoList.push(data.msg)
+        this.scrollBottom()
+      })
+      this.ws.on('join', (data) => {
+        this.room = data.room
+        this.name = data.name
+        // this.start()
+      })
+      this.ws.on('leave', (data) => {
+        this.chatInfoList.push(data.msg)
+        this.room = ''
+        this.name = ''
+        this.chatInfoList = []
+      })
+    }
+  })
+</script>
+</html>
